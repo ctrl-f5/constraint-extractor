@@ -1,0 +1,29 @@
+{
+    "name": "ctrl-f5/constraint-extractor",
+    "version": "1.0.0",
+    "description": "Extract Symfony validator constraints from classes so they can be applied to raw data",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "CtrlF5\\ConstraintExtractor\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Test\\CtrlF5\\ConstraintExtractor\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=8.1",
+        "symfony/validator": "^6.0|^7.0|^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "symfony/framework-bundle": "^6.0|^7.0|^8.0",
+        "symfony/http-foundation": "^6.0|^7.0|^8.0",
+        "symfony/property-access": "^6.0|^7.0|^8.0",
+        "symfony/serializer": "^6.0|^7.0|^8.0",
+        "symfony/http-kernel": "^6.3|^7.0|^8.0"
+    }
+}

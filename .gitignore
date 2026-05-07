@@ -1,0 +1,8 @@
+.idea/
+vendor/
+var/
+
+.phpunit.result.cache
+
+# we test using all sorts of versions, so don't add composer.lock
+composer.lock
