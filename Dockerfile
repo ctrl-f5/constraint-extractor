@@ -6,7 +6,7 @@ ARG XDEBUG=0
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-RUN apk add --no-cache git zip && rm -rf /var/cache/apk/*
+RUN apk add --no-cache git zip openssh-client && rm -rf /var/cache/apk/*
 
 RUN if [ "${XDEBUG}" = "1" ]; then \
         apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers \

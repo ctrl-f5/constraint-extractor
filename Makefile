@@ -1,7 +1,9 @@
 GID := $(shell id -g)
 UID := $(shell id -u)
 TTY := $(shell [ -t 0 ] && echo "-it")
-DOCKER = docker run $(TTY) --rm -u $(UID):$(GID) -v $(PWD):/app -w /app
+UNAME := $(shell uname)
+SSH_SOCK := $(if $(filter Darwin,$(UNAME)),/run/host-services/ssh-auth.sock,$(SSH_AUTH_SOCK))
+DOCKER = docker run $(TTY) --rm -u $(UID):$(GID) -v $(PWD):/app -v $(SSH_SOCK):/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent -w /app
 PHP = constraint-extractor-php
 PHP_LOW = constraint-extractor-php-low
 XDEBUG=0
