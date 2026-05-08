@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CtrlF5\ConstraintExtractor;
 
+use ReflectionNamedType;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Collection;
@@ -15,17 +16,22 @@ use Symfony\Component\Validator\Constraints\Valid;
 class AttributeConstraintExtractor
 {
     public const AUTO_SCALAR_TYPE_ASSERTIONS = 0x1;
+    public const AUTO_ENUM_CHOICE_ASSERTIONS = 0x01;
 
     public function extractConstraints(
         string|object $class,
-        int $flags = self::AUTO_SCALAR_TYPE_ASSERTIONS,
+        int $flags = self::AUTO_SCALAR_TYPE_ASSERTIONS | self::AUTO_ENUM_CHOICE_ASSERTIONS,
     ): Collection {
 
         $constraints = [];
 
         foreach ((new \ReflectionClass($class))->getProperties() as $property) {
 
+            $type = $property->getType();
             $propertyHasTypeAssertion = false;
+            /** @var class-string<\BackedEnum> $propertyEnum */
+            $propertyEnum = !$type?->isBuiltin() && $type instanceof ReflectionNamedType && class_exists($type->getName()) && is_a($type->getName(), \BackedEnum::class, true) ? $type->getName() : null;
+            $propertyHasChoiceConstraint = false;
 
             foreach ($property->getAttributes() as $attribute) {
                 if (is_a($attribute->getName(), Constraint::class, true)) {
@@ -38,13 +44,13 @@ class AttributeConstraintExtractor
                     }
                     // convert enum choices to raw values
                     if ($attributeInstance instanceof Choice) {
+                        $propertyHasChoiceConstraint = true;
                         $attributeInstance->choices = array_map(
                             fn ($choice) => $choice instanceof \BackedEnum ? $choice->value : $choice,
                             $attributeInstance->choices,
                         );
                     }
 
-                    $type = $property->getType();
                     // handle recursive object validation
                     if (is_a($attribute->getName(), Valid::class, true)) {
                         if (!$type instanceof \ReflectionNamedType) {
@@ -76,6 +82,18 @@ class AttributeConstraintExtractor
                         $type->allowsNull() || $property->hasDefaultValue(),
                     );
                 }
+            }
+
+            if ($flags & self::AUTO_ENUM_CHOICE_ASSERTIONS && $propertyEnum !== null && !$propertyHasChoiceConstraint) {
+                $this->addPropertyConstraint(
+                    $constraints,
+                    $property->getName(),
+                    new Choice(choices: array_map(
+                        fn($case) => $case->value,
+                        $propertyEnum::cases(),
+                    )),
+                    $type->allowsNull() || $property->hasDefaultValue(),
+                );
             }
         }
 

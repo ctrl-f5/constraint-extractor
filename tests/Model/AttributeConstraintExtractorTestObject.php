@@ -9,6 +9,9 @@ class AttributeConstraintExtractorTestObject
     public mixed $noConstraints;
     public string $noConstraintsString;
     public string $noConstraintsStringWithDefault = 'default';
+    public BackedStringEnum $noConstraintsEnum;
+    public BackedStringEnum $noConstraintsEnumWithDefault = BackedStringEnum::SECOND;
+    public ?BackedStringEnum $noConstraintsEnumNullable;
     #[Assert\NotBlank()]
     public $noType;
     #[Assert\NotBlank]

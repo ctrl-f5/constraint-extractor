@@ -32,6 +32,9 @@ class AttributeConstraintExtractorTest extends TestCase
         self::assertSame([
             'noConstraintsString',
             'noConstraintsStringWithDefault',
+            'noConstraintsEnum',
+            'noConstraintsEnumWithDefault',
+            'noConstraintsEnumNullable',
             'noType',
             'singleOptionalConstraint',
             'singleRequiredConstraint',
@@ -53,6 +56,21 @@ class AttributeConstraintExtractorTest extends TestCase
         self::assertCount(1, $constraints['noConstraintsStringWithDefault']->constraints);
         self::assertInstanceOf(Assert\Type::class, $constraints['noConstraintsStringWithDefault']->constraints[0]);
         self::assertSame('string', $constraints['noConstraintsStringWithDefault']->constraints[0]->type);
+
+        self::assertInstanceOf(Assert\Required::class, $constraints['noConstraintsEnum']);
+        self::assertCount(1, $constraints['noConstraintsEnum']->constraints);
+        self::assertInstanceOf(Assert\Choice::class, $constraints['noConstraintsEnum']->constraints[0]);
+        self::assertSame(['first_value', 'second_value'], $constraints['noConstraintsEnum']->constraints[0]->choices);
+
+        self::assertInstanceOf(Assert\Optional::class, $constraints['noConstraintsEnumWithDefault']);
+        self::assertCount(1, $constraints['noConstraintsEnumWithDefault']->constraints);
+        self::assertInstanceOf(Assert\Choice::class, $constraints['noConstraintsEnumWithDefault']->constraints[0]);
+        self::assertSame(['first_value', 'second_value'], $constraints['noConstraintsEnumWithDefault']->constraints[0]->choices);
+
+        self::assertInstanceOf(Assert\Optional::class, $constraints['noConstraintsEnumNullable']);
+        self::assertCount(1, $constraints['noConstraintsEnumNullable']->constraints);
+        self::assertInstanceOf(Assert\Choice::class, $constraints['noConstraintsEnumNullable']->constraints[0]);
+        self::assertSame(['first_value', 'second_value'], $constraints['noConstraintsEnumNullable']->constraints[0]->choices);
 
         self::assertInstanceOf(Assert\Optional::class, $constraints['singleOptionalConstraint']);
         self::assertCount(2, $constraints['singleOptionalConstraint']->constraints);
@@ -89,6 +107,7 @@ class AttributeConstraintExtractorTest extends TestCase
         $constraints = $this->extractor->extractConstraints(AttributeConstraintExtractorTestObject::class);
         $value = [
             'noConstraintsString' => '',
+            'noConstraintsEnum' => 'second_value',
             'noType' => 'not blank',
             'singleRequiredConstraint' => 'not blank',
             'multipleConstraints' => 2,
