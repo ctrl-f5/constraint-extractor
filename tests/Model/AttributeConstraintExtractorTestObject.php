@@ -7,6 +7,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 class AttributeConstraintExtractorTestObject
 {
     public mixed $noConstraints;
+    public string $noConstraintsString;
+    public string $noConstraintsStringWithDefault = 'default';
     #[Assert\NotBlank()]
     public $noType;
     #[Assert\NotBlank]

@@ -14,13 +14,23 @@ use Symfony\Component\Validator\Constraints\Valid;
 
 class AttributeConstraintExtractor
 {
-    public function extractConstraints(string|object $class): Collection
-    {
+    public const AUTO_SCALAR_TYPE_ASSERTIONS = 0x1;
+
+    public function extractConstraints(
+        string|object $class,
+        int $flags = self::AUTO_SCALAR_TYPE_ASSERTIONS,
+    ): Collection {
+
         $constraints = [];
+
         foreach ((new \ReflectionClass($class))->getProperties() as $property) {
+
+            $propertyHasTypeAssertion = false;
+
             foreach ($property->getAttributes() as $attribute) {
                 if (is_a($attribute->getName(), Constraint::class, true)) {
                     $attributeInstance = $attribute->newInstance();
+                    $propertyHasTypeAssertion = $propertyHasTypeAssertion || $attributeInstance instanceof Type;
 
                     // exclude class types assertions, we want to validate the data as array
                     if ($attributeInstance instanceof Type && class_exists($attributeInstance->type)) {
@@ -40,24 +50,44 @@ class AttributeConstraintExtractor
                         if (!$type instanceof \ReflectionNamedType) {
                             throw new \RuntimeException('Recursive validation requires the property to have a single type');
                         }
-                        $constraints[$property->getName()] = $type->allowsNull()
+                        $constraints[$property->getName()] = $type->allowsNull() || $property->hasDefaultValue()
                             ? new Optional($this->extractConstraints($type->getName()))
                             : new Required($this->extractConstraints($type->getName()));
-                        continue;
+                        continue 2;
                     }
 
                     // handle regular property validation
-                    if (!array_key_exists($property->getName(), $constraints)) {
-                        $constraints[$property->getName()] = null === $type || $type->allowsNull()
-                            ? new Optional($attributeInstance)
-                            : new Required($attributeInstance);
-                    } else {
-                        $constraints[$property->getName()]->constraints[] = $attributeInstance;
-                    }
+                    $this->addPropertyConstraint(
+                        $constraints,
+                        $property->getName(),
+                        $attributeInstance,
+                        null === $type || $type->allowsNull() || $property->hasDefaultValue(),
+                    );
+                }
+            }
+
+            if ($flags & self::AUTO_SCALAR_TYPE_ASSERTIONS && !$propertyHasTypeAssertion) {
+                $type = $property->getType();
+                if ($type instanceof \ReflectionNamedType && in_array($type->getName(), ['int', 'float', 'string', 'bool'], true)) {
+                    $this->addPropertyConstraint(
+                        $constraints,
+                        $property->getName(),
+                        new Type($type->getName()),
+                        $type->allowsNull() || $property->hasDefaultValue(),
+                    );
                 }
             }
         }
 
         return new Collection($constraints, allowExtraFields: true);
+    }
+
+    private function addPropertyConstraint(array &$constraints, string $propertyName, Constraint $constraint, bool $optional): void
+    {
+        if (!array_key_exists($propertyName, $constraints)) {
+            $constraints[$propertyName] = $optional ? new Optional($constraint) : new Required($constraint);
+        } else {
+            $constraints[$propertyName]->constraints[] = $constraint;
+        }
     }
 }

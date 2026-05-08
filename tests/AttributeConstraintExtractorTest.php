@@ -30,6 +30,8 @@ class AttributeConstraintExtractorTest extends TestCase
         $constraints = $collection->fields;
 
         self::assertSame([
+            'noConstraintsString',
+            'noConstraintsStringWithDefault',
             'noType',
             'singleOptionalConstraint',
             'singleRequiredConstraint',
@@ -42,13 +44,27 @@ class AttributeConstraintExtractorTest extends TestCase
         self::assertCount(1, $constraints['noType']->constraints);
         self::assertInstanceOf(Assert\NotBlank::class, $constraints['noType']->constraints[0]);
 
+        self::assertInstanceOf(Assert\Required::class, $constraints['noConstraintsString']);
+        self::assertCount(1, $constraints['noConstraintsString']->constraints);
+        self::assertInstanceOf(Assert\Type::class, $constraints['noConstraintsString']->constraints[0]);
+        self::assertSame('string', $constraints['noConstraintsString']->constraints[0]->type);
+
+        self::assertInstanceOf(Assert\Optional::class, $constraints['noConstraintsStringWithDefault']);
+        self::assertCount(1, $constraints['noConstraintsStringWithDefault']->constraints);
+        self::assertInstanceOf(Assert\Type::class, $constraints['noConstraintsStringWithDefault']->constraints[0]);
+        self::assertSame('string', $constraints['noConstraintsStringWithDefault']->constraints[0]->type);
+
         self::assertInstanceOf(Assert\Optional::class, $constraints['singleOptionalConstraint']);
-        self::assertCount(1, $constraints['singleOptionalConstraint']->constraints);
+        self::assertCount(2, $constraints['singleOptionalConstraint']->constraints);
         self::assertInstanceOf(Assert\NotBlank::class, $constraints['singleOptionalConstraint']->constraints[0]);
+        self::assertInstanceOf(Assert\Type::class, $constraints['singleOptionalConstraint']->constraints[1]);
+        self::assertSame('string', $constraints['singleOptionalConstraint']->constraints[1]->type);
 
         self::assertInstanceOf(Assert\Required::class, $constraints['singleRequiredConstraint']);
-        self::assertCount(1, $constraints['singleRequiredConstraint']->constraints);
+        self::assertCount(2, $constraints['singleRequiredConstraint']->constraints);
         self::assertInstanceOf(Assert\NotBlank::class, $constraints['singleRequiredConstraint']->constraints[0]);
+        self::assertInstanceOf(Assert\Type::class, $constraints['singleRequiredConstraint']->constraints[1]);
+        self::assertSame('string', $constraints['singleRequiredConstraint']->constraints[1]->type);
 
         self::assertInstanceOf(Assert\Optional::class, $constraints['multipleConstraints']);
         self::assertCount(2, $constraints['multipleConstraints']->constraints);
@@ -72,6 +88,7 @@ class AttributeConstraintExtractorTest extends TestCase
     {
         $constraints = $this->extractor->extractConstraints(AttributeConstraintExtractorTestObject::class);
         $value = [
+            'noConstraintsString' => '',
             'noType' => 'not blank',
             'singleRequiredConstraint' => 'not blank',
             'multipleConstraints' => 2,
